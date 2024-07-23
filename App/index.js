@@ -5,30 +5,48 @@ import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Text, TextInput, Button, ScrollView, View, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 
-const BASE_URL = 'http://example.com/api';  // Replace with your actual API base URL 
+export const BASE_URL = 'http://example.com/api'; // Replace with your actual API base URL
 
-const TaskList = ({ tasks, setTasks }) => {
-    const toggleComplete = (index) => {
-        const newTasks = [...tasks];
-        newTasks[index].completed = !newTasks[index].completed;
-        setTasks(newTasks);
+const TaskList = ({ tasks, editTask, deleteTask, toggleComplete }) => {
+    const [editingTaskId, setEditingTaskId] = useState(null);
+    const [editingTaskText, setEditingTaskText] = useState('');
+
+    const startEditing = (id, text) => {
+        setEditingTaskId(id);
+        setEditingTaskText(text);
     };
 
-    const deleteTask = (index) => {
-        const newTasks = tasks.filter((_, i) => i !== index);
-        setTasks(newTasks);
+    const saveEdit = (id) => {
+        editTask(id, editingTaskText);
+        setEditingTaskId(null);
+        setEditingTaskText('');
     };
 
     return (
         <View>
-            {tasks.map((task, index) => (
-                <View key={index} style={styles.taskContainer}>
-                    <Text style={task.completed ? styles.completedTask : styles.task}>
-                        {task.description}
-                    </Text>
+            {tasks.map((task) => (
+                <View key={task.id} style={styles.taskContainer}>
+                    {editingTaskId === task.id ? (
+                        <TextInput
+                            style={styles.input}
+                            value={editingTaskText}
+                            onChangeText={setEditingTaskText}
+                        />
+                    ) : (
+                        <Text style={task.completed ? styles.completedTask : styles.task}>
+                            {task.description}
+                        </Text>
+                    )}
                     <View style={styles.buttons}>
-                        <Button title={task.completed ? 'Undo' : 'Complete'} onPress={() => toggleComplete(index)} />
-                        <Button title="Delete" onPress={() => deleteTask(index)} />
+                        {editingTaskId === task.id ? (
+                            <Button title="Save" onPress={() => saveEdit(task.id)} />
+                        ) : (
+                            <>
+                                <Button title={task.completed ? 'Undo' : 'Complete'} onPress={() => toggleComplete(task.id)} />
+                                <Button title="Edit" onPress={() => startEditing(task.id, task.description)} />
+                                <Button title="Delete" onPress={() => deleteTask(task.id)} />
+                            </>
+                        )}
                     </View>
                 </View>
             ))}
@@ -69,6 +87,40 @@ export default function App() {
         }
     };
 
+    const editTask = async (id, description) => {
+        try {
+            const response = await axios.put(`${BASE_URL}/tasks/${id}`, { description });
+            const updatedTasks = tasks.map(task =>
+                task.id === id ? response.data : task
+            );
+            setTasks(updatedTasks);
+        } catch (error) {
+            console.error('Error editing task:', error);
+        }
+    };
+
+    const deleteTask = async (id) => {
+        try {
+            await axios.delete(`${BASE_URL}/tasks/${id}`);
+            setTasks(tasks.filter(task => task.id !== id));
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
+    };
+
+    const toggleComplete = async (id) => {
+        const task = tasks.find(task => task.id === id);
+        try {
+            const response = await axios.put(`${BASE_URL}/tasks/${id}`, { completed: !task.completed });
+            const updatedTasks = tasks.map(t =>
+                t.id === id ? response.data : t
+            );
+            setTasks(updatedTasks);
+        } catch (error) {
+            console.error('Error toggling task:', error);
+        }
+    };
+
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
@@ -88,7 +140,7 @@ export default function App() {
             />
             <Button title="Add Task" onPress={addTask} />
             <ScrollView style={styles.scrollView}>
-                <TaskList tasks={tasks} setTasks={setTasks} />
+                <TaskList tasks={tasks} editTask={editTask} deleteTask={deleteTask} toggleComplete={toggleComplete} />
             </ScrollView>
         </SafeAreaView>
     );

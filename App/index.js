@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Text, TextInput, Button, ScrollView, View, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 
-export const BASE_URL = 'http://example.com/api'; // Replace with your actual API base URL
+const API_BASE_URL = 'http://example.com/api'; // Replace with your actual API base URL
 
 const TaskList = ({ tasks, editTask, deleteTask, toggleComplete }) => {
     const [editingTaskId, setEditingTaskId] = useState(null);
@@ -54,7 +54,7 @@ const TaskList = ({ tasks, editTask, deleteTask, toggleComplete }) => {
     );
 };
 
-export default function App() {
+const App = () => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newTask, setNewTask] = useState('');
@@ -62,7 +62,7 @@ export default function App() {
     useEffect(() => {
         const fetchTasks = async () => {
             try {
-                const response = await axios.get(`${BASE_URL}/tasks`);
+                const response = await axios.get(`${API_BASE_URL}/tasks`);
                 setTasks(response.data);
                 setLoading(false);
             } catch (error) {
@@ -78,7 +78,7 @@ export default function App() {
         if (newTask !== '') {
             const task = { description: newTask, completed: false };
             try {
-                const response = await axios.post(`${BASE_URL}/tasks`, task);
+                const response = await axios.post(`${API_BASE_URL}/tasks`, task);
                 setTasks([...tasks, response.data]);
                 setNewTask('');
             } catch (error) {
@@ -89,7 +89,7 @@ export default function App() {
 
     const editTask = async (id, description) => {
         try {
-            const response = await axios.put(`${BASE_URL}/tasks/${id}`, { description });
+            const response = await axios.put(`${API_BASE_URL}/tasks/${id}`, { description });
             const updatedTasks = tasks.map(task =>
                 task.id === id ? response.data : task
             );
@@ -101,7 +101,7 @@ export default function App() {
 
     const deleteTask = async (id) => {
         try {
-            await axios.delete(`${BASE_URL}/tasks/${id}`);
+            await axios.delete(`${API_BASE_URL}/tasks/${id}`);
             setTasks(tasks.filter(task => task.id !== id));
         } catch (error) {
             console.error('Error deleting task:', error);
@@ -111,7 +111,7 @@ export default function App() {
     const toggleComplete = async (id) => {
         const task = tasks.find(task => task.id === id);
         try {
-            const response = await axios.put(`${BASE_URL}/tasks/${id}`, { completed: !task.completed });
+            const response = await axios.put(`${API_BASE_URL}/tasks/${id}`, { completed: !task.completed });
             const updatedTasks = tasks.map(t =>
                 t.id === id ? response.data : t
             );
@@ -144,7 +144,7 @@ export default function App() {
             </ScrollView>
         </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -187,4 +187,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginTop: 10,
     },
+    inputTask: {
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#CCCCCC',
+        borderRadius: 8,
+        width: '100%',
+    },
 });
+
+export default App;
